@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ovsdb-mon-ovn
+spec:
+  containers:
+  - name: ovsdb-mon-ovn
+    image: quay.io/pdiak/fedora-ovn:latest
+    resources:
+      requests:
+        memory: "64Mi"
+      limits:
+        memory: "256Mi"
+    imagePullPolicy: IfNotPresent
+    env:
+    - name: OVS_RUNDIR
+      value: "/run/ovn"
+    command:
+    - /bin/bash
+    - -c
+    - "set -xe\n
+      \ git clone https://github.com/amorenoz/ovsdb-mon\n
+      \ pushd ovsdb-mon\n
+      \ #The following trick makes it work on upstream ovn-kubernetes as it uses different paths, it does nothing on openshift\"\n
+      \ ln -s /run/openvswitch/ovnnb_db.sock ${OVS_RUNDIR}/ovnnb_db.sock 2> /dev/null || true\n
+      \ ln -s /run/openvswitch/ovnsb_db.sock ${OVS_RUNDIR}/ovnsb_db.sock 2> /dev/null || true\n
+      \ ovsdb-client get-schema \"unix:${OVS_RUNDIR}/ovnnb_db.sock\" OVN_Northbound > ovnnb.schema\n
+      \ ovsdb-client get-schema \"unix:${OVS_RUNDIR}/ovnsb_db.sock\" OVN_Southbound > ovnsb.schema\n
+      \ SCHEMA=ovnnb.schema make && mv -v ./bin/ovsdb-mon /usr/local/bin/ovsdb-mon.nb\n
+      \ SCHEMA=ovnsb.schema make && mv -v ./bin/ovsdb-mon /usr/local/bin/ovsdb-mon.sb\n
+      \ popd\n
+      \ trap : TERM INT; sleep infinity & wait"
+    volumeMounts:
+    - mountPath: /run/ovn/
+      name: run-ovn
+    - mountPath: /run/openvswitch/
+      name: run-ovs
+    readinessProbe:
+      exec:
+        command:
+        - ls
+        - /usr/local/bin/ovsdb-mon.nb
+        - /usr/local/bin/ovsdb-mon.sb
+      initialDelaySeconds: 5
+  volumes:
+  - hostPath:
+      path: /run/ovn
+      type: ""
+    name: run-ovn
+  - hostPath:
+      path: /run/openvswitch
+      type: ""
+    name: run-ovs
+  tolerations:
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+  hostNetwork: true
+  nodeSelector:
+    node-role.kubernetes.io/master: ""

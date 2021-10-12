@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ovsdb-mon-ovs
+spec:
+  selector:
+    matchLabels:
+      name: ovsdb-mon-ovs
+  template:
+    metadata:
+      labels:
+        name: ovsdb-mon-ovs
+    spec:
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: ovsdb-mon
+          image: quay.io/pdiak/fedora-ovn:latest
+          resources:
+            requests:
+              memory: "64Mi"
+            limits:
+              memory: "256Mi"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: OVS_RUNDIR
+              value: "/run/ovn"
+          command:
+            - /bin/bash
+            - -c
+            - "set -xe\n
+              \ git clone https://github.com/amorenoz/ovsdb-mon\n
+              \ pushd ovsdb-mon\n
+              \ declare -A ALL_db_schemas=( [\"OVN_Northbound\"]=\"ovnnb_db.sock\" [\"OVN_Southbound\"]=\"ovnsb_db.sock\" [\"Open_vSwitch\"]=\"db.sock\") \n
+              \ declare -A db_schemas=( [\"Open_vSwitch\"]=\"db.sock\" ) \n
+              \ for k in \"${!db_schemas[@]}\"; do\n
+              \   #The following trick makes it work on upstream ovn-kubernetes as it uses different paths, it does nothing on openshift\n
+              \   ln -s /run/openvswitch/${db_schemas[${k}]} ${OVS_RUNDIR}/${db_schemas[${k}]} 2> /dev/null || true\n
+              \   if [ -e \"${OVS_RUNDIR}/${db_schemas[${k}]}\" ]; then\n
+              \     ovsdb-client get-schema \"unix:${OVS_RUNDIR}/${db_schemas[${k}]}\" ${k} > ${k}.schema\n
+              \     SCHEMA=${k}.schema make build \n
+              \     mv ./bin/ovsdb-mon /usr/local/bin/ovsdb-mon.${k}\n
+              \   fi\n
+              \ done \n
+              \ touch /tmp/build_finished
+              \ popd\n
+              \ trap : TERM INT; sleep infinity & wait"
+          volumeMounts:
+            - mountPath: /run/ovn/
+              name: run-ovn
+            - mountPath: /run/openvswitch/
+              name: run-ovs
+          readinessProbe:
+            exec:
+              command:
+              - ls
+              - /tmp/build_finished
+            initialDelaySeconds: 5
+      volumes:
+        - hostPath:
+            path: /run/ovn
+            type: ""
+          name: run-ovn
+        - hostPath:
+            path: /run/openvswitch
+            type: ""
+          name: run-ovs
+      hostNetwork: true
