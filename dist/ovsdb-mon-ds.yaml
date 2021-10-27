@@ -17,7 +17,7 @@ spec:
           effect: NoSchedule
       containers:
         - name: ovsdb-mon
-          image: quay.io/amorenoz/ovsdb-mon:latest
+          image: quay.io/ffernand/ovsdb-mon:adrian-local-container
           resources:
             requests:
               memory: "64Mi"

@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: ovsdb-mon-ovn
-    image: quay.io/amorenoz/ovsdb-mon:latest
+    image: quay.io/ffernand/ovsdb-mon:adrian-local-container
     resources:
       requests:
         memory: "64Mi"
