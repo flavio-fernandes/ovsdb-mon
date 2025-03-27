@@ -1,10 +1,10 @@
-FROM quay.io/centos/centos:stream8
+FROM quay.io/centos/centos:stream9
 
 USER root
 
 RUN dnf install -y centos-release-nfv-openvswitch
 RUN INSTALL_PKGS=" \
-    openvswitch2.15 ovn-2021-host ovn-2021-central \
+    openvswitch2.17 ovn23.09-host ovn23.09-central \
     iptables iproute iputils tcpdump socat procps \
     make go git \
         " && \

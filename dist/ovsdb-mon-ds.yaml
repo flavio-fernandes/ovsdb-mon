@@ -24,7 +24,7 @@ spec:
             requests:
               memory: "64Mi"
             limits:
-              memory: "256Mi"
+              memory: "512Mi"
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - mountPath: /run/ovn-ic/
