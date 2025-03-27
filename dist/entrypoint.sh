@@ -7,7 +7,14 @@ pushd ovsdb-mon
 
 declare -A db_schemas=( ["OVN_Northbound"]="ovnnb_db.sock" ["OVN_Southbound"]="ovnsb_db.sock" ["Open_vSwitch"]="db.sock")
 
-declare -a ovs_runpaths=("/run/openvswitch" "/run/ovn" "/var/run/openvswitch" "/var/lib/ovn/" "/var/lib/openvswitch/ovn")
+declare -a ovs_runpaths=("/run/openvswitch" \
+                         "/var/run/openvswitch" \
+                         "/run/ovn" \
+                         "/run/ovn-ic" \
+                         "/var/lib/ovn/" \
+                         "/var/lib/ovn-ic/" \
+                         "/var/lib/openvswitch/ovn" \
+                         "/var/lib/openvswitch/ovn-ic")
 
 for k in "${!db_schemas[@]}"; do
     for path in "${ovs_runpaths[@]}"; do

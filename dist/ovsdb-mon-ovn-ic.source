@@ -1,0 +1,7 @@
+if [ "${BASH_SOURCE[0]}" -ef "$0" ]
+then
+    >&2 echo 'Please source this script, not execute it!'
+    exit 1
+fi
+
+source ./ovsdb-mon-ovs.source
