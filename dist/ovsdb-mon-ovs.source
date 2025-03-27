@@ -26,7 +26,7 @@ fi
 kubectl apply -n ovsdb-mon -f ./ovsdb-mon-ds.yaml || { >&2 echo 'bad k8s?'; return; }
 
 # create handy aliases for easy usage of ovsdb-mon.ovs
-DS='ovsdb-mon-ovs'
+DS='ovsdb-mon'
 POD_TUPLES=$(
 kubectl get pod -n ovsdb-mon \
   -o jsonpath='{range .items[*]}{.spec.nodeName}{"/"}{.metadata.name}{" "}{end}' | grep ${DS} )
@@ -38,6 +38,8 @@ for POD_TUPLE in $POD_TUPLES ; do \
    POD=$(echo $POD_TUPLE | cut -d/ -f2)
    echo $NODE has pod ${POD} . Creating alias ovsdb-mon.ovs.$NODE
    alias ovsdb-mon.ovs.$NODE="kubectl exec -n ovsdb-mon -it $POD -- ovsdb-mon.Open_vSwitch"
+   alias ovsdb-mon.nb.$NODE="kubectl exec -n ovsdb-mon -it $POD -- ovsdb-mon.OVN_Northbound"
+   alias ovsdb-mon.sb.$NODE="kubectl exec -n ovsdb-mon -it $POD -- ovsdb-mon.OVN_Southbound"
 done
 
 echo
@@ -46,6 +48,7 @@ echo
 echo "to remove daemonset created, do: kubectl delete -n ovsdb-mon ds ${DS}"
 echo 'commands to try (after pod becomes ready):'
 echo "   ovsdb-mon.ovs.${NODE} list Interface Name Ofport ExternalIDs"
+echo "   ovsdb-mon.nb.${NODE} list ACL"
 echo "   kubectl exec -n ovsdb-mon -it ${POD} -- ovs-vsctl show"
 echo "   kubectl exec -n ovsdb-mon -it ${POD} -- ovs-ofctl --names dump-flows br-int table=0 | cut -d',' -f3-"
 echo

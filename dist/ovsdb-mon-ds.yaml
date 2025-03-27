@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: ovsdb-mon-ovs
+  name: ovsdb-mon
 spec:
   selector:
     matchLabels:
-      name: ovsdb-mon-ovs
+      name: ovsdb-mon
   template:
     metadata:
       labels:
-        name: ovsdb-mon-ovs
+        name: ovsdb-mon
     spec:
       tolerations:
         - key: node-role.kubernetes.io/master
@@ -24,9 +24,11 @@ spec:
             requests:
               memory: "64Mi"
             limits:
-              memory: "256Mi"
+              memory: "512Mi"
           imagePullPolicy: IfNotPresent
           volumeMounts:
+            - mountPath: /run/ovn-ic/
+              name: run-ovn-ic
             - mountPath: /run/ovn/
               name: run-ovn
             - mountPath: /run/openvswitch/
@@ -42,6 +44,10 @@ spec:
             path: /run/ovn
             type: ""
           name: run-ovn
+        - hostPath:
+            path: /run/ovn-ic
+            type: ""
+          name: run-ovn-ic
         - hostPath:
             path: /run/openvswitch
             type: ""
